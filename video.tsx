@@ -16,18 +16,19 @@ import { ImageBackground } from 'react-native';
 import { getVideoSource } from './src/constants/videoSources';
 import { UI_ASSETS, getOptionImage } from './src/constants/uiAssets';
 import { QUESTIONS } from './src/constants/questions';
+import { VIDEO_SOURCES } from './src/constants/videoSources';
 
 // V, UI, QUESTIONS now imported from constants - cleaner main file!
 
-const { width: SW, height: SH } = (() => {
-  const { width, height } = Dimensions.get('window');
-  return { width: Math.max(width, height), height: Math.min(width, height) };
-})();
 
-// Responsive Font Helper
-const rf = (size: number) => {
-  const standardWidth = 812; // Base scale for landscape
-  return Math.round((size * SW) / standardWidth);
+const { width, height } = Dimensions.get('window');
+
+export const wp = (percent: number) => (width * percent) / 100;
+export const hp = (percent: number) => (height * percent) / 100;
+
+export const rf = (size: number) => {
+  const baseWidth = 812;
+  return Math.round((size * width) / baseWidth);
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -59,9 +60,16 @@ const VideoQuiz = () => {
   const [showResult, setShowResult] = useState(false);
   const [paused, setPaused] = useState(false);
   const [debugPhase, setDebugPhase] = useState<Phase | null>(null); // DEBUG MODE
+
+  const [preloadedVideos, setPreloadedVideos] = useState(new Set());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const questionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevPhaseRef = useRef<Phase>('opening');
+
+
+
+
+
 
   // Use debug phase if set, otherwise use actual phase
   const displayPhase = debugPhase || phase;
@@ -154,20 +162,23 @@ const VideoQuiz = () => {
   }, [phase]);
 
   // show options/results after video ends
-  useEffect(() => {
-    if (phase === 'questionVideo') {
-      setShowQuestion(false);
-      setShowOptions(false);
-      setSelectedOption(null);
-      setPaused(false);
-    } else if (phase === 'resultVideo') {
-      setShowResult(false);
-      setPaused(false);
-    } else {
-      stopQuestion();
-    }
-    return () => stopQuestion();
-  }, [phase, stopQuestion]);
+ useEffect(() => {
+  if (phase === 'questionVideo') {
+    setShowQuestion(false);
+    setShowOptions(false);
+    setSelectedOption(null);
+    setPaused(false);
+
+  } else if (phase === 'resultVideo') {
+    setShowResult(false);
+    setPaused(false);
+
+  } else {
+    stopQuestion();
+  }
+
+  return () => stopQuestion();
+}, [phase, stopQuestion]);
 
   // when options phase starts: show options+submit+timer
   useEffect(() => {
@@ -199,7 +210,32 @@ const VideoQuiz = () => {
   const onExitApp = useCallback(() => BackHandler.exitApp(), []);
 
   // ── current video source ──
-  const videoSource = getVideoSource(phase, qIndex, lastCorrect, score);
+const videoSource = React.useMemo(() => {
+  return getVideoSource(
+    phase,
+    qIndex,
+    lastCorrect,
+    score,
+  );
+}, [phase, qIndex, lastCorrect, score]);
+
+  // Preload all videos
+  useEffect(() => {
+    const allSources = [
+      VIDEO_SOURCES.opening,
+      VIDEO_SOURCES.cancel,
+      ...VIDEO_SOURCES.question,
+      ...VIDEO_SOURCES.correct,
+      ...VIDEO_SOURCES.incorrect,
+      ...VIDEO_SOURCES.score,
+      VIDEO_SOURCES.exit[0],
+    ];
+    allSources.forEach(source => {
+      if (!preloadedVideos.has(source)) {
+        setPreloadedVideos(prev => new Set([...prev, source]));
+      }
+    });
+  }, []);
 
   // ── handlers ──
   const onVideoEnd = useCallback(() => {
@@ -283,7 +319,7 @@ const VideoQuiz = () => {
       cancelTimerRef.current = null;
     }
 
-    setPhase('exitVideo'); // ✅ PLAY VIDEO INSTEAD OF EXIT
+    setPhase('exitVideo');
   }, [stopTimer, stopQuestion]);
   const onNextResult = useCallback(() => {
     stopTimer();
@@ -343,28 +379,30 @@ const VideoQuiz = () => {
   // ── render ──
   return (
     <SafeAreaView style={s.root} edges={['top', 'bottom', 'left', 'right']}>
-      {/* ── Video Player — always mounted, source swapped smoothly ── */}
-      <RNVideo
-        source={videoSource}
-        style={s.video}
-        resizeMode="cover"
-        onEnd={onVideoEnd}
-        muted={isMuted}
-        controls={false}
-        repeat={false}
-        useTextureView={false}
-        paused={
-          phase === 'home' ||
-          phase === 'cancel' ||
-          (phase === 'resultVideo' && paused)
-        }
-        bufferConfig={{
-          minBufferMs: 1000,
-          maxBufferMs: 3000,
-          bufferForPlaybackMs: 500,
-          bufferForPlaybackAfterRebufferMs: 1000,
-        }}
-      />
+      {/* ── Video Player — smooth source switching ── */}
+      
+ <RNVideo
+  source={videoSource}
+  style={s.video}
+  resizeMode="cover"
+  onEnd={onVideoEnd}
+  muted={isMuted}
+  controls={false}
+  repeat={false}
+  preventsDisplaySleepDuringVideoPlayback={false}
+  automaticallyWaitsToMinimizeStalling={false}
+  paused={
+    phase === 'home' ||
+    phase === 'cancel' ||
+    (phase === 'resultVideo' && paused)
+  }
+  bufferConfig={{
+    minBufferMs: 1000,
+    maxBufferMs: 3000,
+    bufferForPlaybackMs: 250,
+    bufferForPlaybackAfterRebufferMs: 500,
+  }}
+/>
 
       {/* ── Permanent header: logo + score + exit/audio (opening onwards, not home) ── */}
       <View style={s.permHeader} pointerEvents="box-none">
@@ -389,18 +427,19 @@ const VideoQuiz = () => {
 
             {/* AUDIO + EXIT */}
             <View style={s.headerRight}>
-              <TouchableOpacity onPress={() => setIsMuted(prev => !prev)}>
+                <TouchableOpacity style={s.topRightBtnWrap} onPress={() => setIsMuted(prev => !prev)}>
                 <Image
                   source={UI_ASSETS.audioBtn}
                   style={[s.topRightBtn, { opacity: isMuted ? 0.4 : 1 }]}
                 />
-              </TouchableOpacity>
+                </TouchableOpacity>
 
               <TouchableOpacity
                 onPress={onCancelPress}
                 disabled={phase === 'cancel' || phase === 'score'}
+                style={s.topRightBtnWrap}
               >
-                <Image source={UI_ASSETS.exitBtn} style={s.topRightBtn} />
+  <Image source={UI_ASSETS.exitBtn} style={s.topRightBtn} />
               </TouchableOpacity>
             </View>
           </>
@@ -447,16 +486,19 @@ const VideoQuiz = () => {
 
           {/* Timer + Submit */}
           <View style={s.bottomLeft}>
-            <Image
-              source={UI_ASSETS.timeBtn}
-              style={s.timeImg}
-              resizeMode="contain"
-            />
-            <Text style={s.timerText}>
-              {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:
-              {String(timeLeft % 60).padStart(2, '0')}
-            </Text>
-          </View>
+  <View style={s.timerWrap}>
+    <Image
+      source={UI_ASSETS.timeBtn}
+      style={s.timeImg}
+      resizeMode="contain"
+    />
+
+    <Text style={s.timerText}>
+      {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:
+      {String(timeLeft % 60).padStart(2, '0')}
+    </Text>
+  </View>
+</View>
           <TouchableOpacity
             style={[
               s.bottomRight,
@@ -515,7 +557,7 @@ const VideoQuiz = () => {
               />
 
               {/* TEXT CENTERED */}
-              <Text style={[s.centerOptionText, { left: '10%' }]}>
+              <Text style={[s.centerOptionText]}>
                 {QUESTIONS[qIndex].options[QUESTIONS[qIndex].correctAnswer]}
               </Text>
             </View>
@@ -545,7 +587,7 @@ const VideoQuiz = () => {
             <View style={s.incorrectResultBg2}>
               <Image
                 source={UI_ASSETS.incorrectAnswer}
-                style={[s.resultBanner, { left: -6, top: -20 }]}
+                style={[s.resultBanner]}
                 resizeMode="contain"
               />
             </View>
@@ -554,19 +596,19 @@ const VideoQuiz = () => {
               <Image
                 source={getOptionImage(QUESTIONS[qIndex].correctAnswer)}
                 style={s.correctAnswerImg}
-                resizeMode="contain"
+                resizeMode="stretch"
               />
 
-              <Text style={[s.centerOptionText, { left: '12%' }]}>
+              <Text style={[s.centerOptionText]}>
                 {QUESTIONS[qIndex].options[QUESTIONS[qIndex].correctAnswer]}
               </Text>
             </View>
 
             {/* Reason */}
             <Image
-              source={UI_ASSETS.reasonPanel}
-              style={[s.reasonPanel, { left: 34, width: 290, height: 110 }]}
-              resizeMode="stretch"
+              source={UI_ASSETS.reasonPanel} 
+              style={[s.reasonPanel]}
+              resizeMode="contain"
             />
 
             <Text style={s.explanationText}>
@@ -619,7 +661,7 @@ const VideoQuiz = () => {
             >
               <Image
                 source={UI_ASSETS.continueQuiz}
-                style={[s.cancelActionImg, { left: 16, width: 160, bottom: 6 }]}
+                style={[s.cancelActionImg, { left: wp(4), width: wp(20), bottom: hp(2) }]}
                 resizeMode="contain"
               />
             </TouchableOpacity>
@@ -722,7 +764,7 @@ const VideoQuiz = () => {
                 justifyContent: 'center',
                 alignItems: 'center',
                 width: '78%',
-                left: '6%',
+                left: wp(6),
               }}
               resizeMode="cover"
             />
@@ -738,121 +780,139 @@ export default VideoQuiz;
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000' },
-  video: { ...StyleSheet.absoluteFill, left: SW * 0.02, right: SW * 0.04 },
+  video: { ...StyleSheet.absoluteFill, },
   overlay: { ...StyleSheet.absoluteFill },
-  fullImg: { width: SW, height: SH },
 
   // Options screen — left panel
   leftPanel: {
     position: 'absolute',
-    left: 26,
-    top: 0,
+    left: wp(4),
+    top: hp(12),
     bottom: 0,
-    width: SW * 1,
+    width: wp(100) * 0.38 + wp(4), // panel width + some question padding
     paddingHorizontal: 4,
-    paddingTop: 50,
-    paddingBottom: 60,
-    justifyContent: 'space-between',
   },
-  questionPanel: { width: '38%', height: SH * 0.14, marginBottom: 2 },
+  questionPanel: {
+  width: wp(36),
+  height: hp(15),
+  justifyContent: 'center',
+},
   optionRow: {
-    width: '38%',
-    height: SH * 0.14,
+  width: wp(36),
+  height: hp(15),
+  justifyContent: 'center',
+  alignItems: 'center',
+  overflow: 'hidden',
+  marginTop: hp(1),
+},
 
-    justifyContent: 'center',
-    alignItems: 'center',
+optionImg: {
+  ...StyleSheet.absoluteFill,
+  width: undefined,
+  height: undefined,
+},
 
-    overflow: 'hidden', // 🔥 prevent visual overflow issues
-  },
+optionTextStyle: {
+  position: 'absolute',
 
-  optionImg: {
-    width: '100%',
-    height: '100%',
-    left: 0,
-  },
+  width: '76%',
+  height: '100%',
+
+  alignSelf: 'center',
+
+  color: '#fff',
+  fontSize: rf(14),
+
+  fontWeight: '500',
+
+  textAlign: 'left',
+  textAlignVertical: 'center',
+
+  includeFontPadding: false,
+
+  lineHeight: rf(18),
+  paddingVertical: hp(2.5),
+  left: wp(6),
+},
   optionBorder: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 12,
-    bottom: 0,
-    width: '100%',
-    borderWidth: 3,
-    borderColor: '#fff',
-
-    borderRadius: 14,
-  },
+  position: 'absolute',
+  width: '100%',
+  height: '90%',
+  borderWidth: 3,
+  borderColor: '#fff',
+  borderRadius: 14,
+},
   optionTap: { ...StyleSheet.absoluteFill },
 
   // Question and option text
   questionText: {
-    position: 'absolute',
-    width: '36%', // same as questionPanel
-    height: SH * 0.14, // same as panel height
-    top: 52, // align with panel
-    left: 60, // align with panel
+  position: 'absolute',
 
-    textAlign: 'left',
-    textAlignVertical: 'center', // 🔥 important
+  width: '74%',
+  height: '100%',
 
-    color: '#fff',
-    fontSize: rf(16), // Responsive 18
-    fontWeight: 'bold',
+  alignSelf: 'center',
 
-    includeFontPadding: false,
-  },
-  optionTextStyle: {
-    position: 'absolute',
+  color: '#fff',
+  fontSize: rf(14),
+  fontWeight: 'bold',
 
-    width: '100%',
-    height: '100%',
+  textAlign: 'left',
+  textAlignVertical: 'center',
 
-    // textAlign: 'center',
-    left: '10%',
-    textAlignVertical: 'center', // 🔥 KEY LINE
+  includeFontPadding: false,
 
-    color: '#fff',
-    fontSize: rf(14),
-    fontWeight: '500',
-
-    paddingHorizontal: 20, // prevent text touching edges
-  },
+  lineHeight: rf(18),
+  paddingTop: hp(2),
+  left: wp(6.4),
+},
   optionTextSelected: { color: '#FFD700' },
 
   // Permanent header (opening onwards)
   permHeader: {
     position: 'absolute',
-    top: 10,
+    top: hp(2),
     left: 0,
     right: 0,
-    height: 50,
+    height: hp(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     zIndex: 99,
   },
-  logoImg: { width: 140, height: 90, left: 18 },
-  scorePill: { flexDirection: 'row', alignItems: 'center', gap: 6, left: 240 },
-  scoreImg: { width: 100, height: 90, right: 20 },
+  logoImg: { width: wp(30), height: hp(20),right: wp(4) },
+  scorePill: { flexDirection: 'row', alignItems: 'center', gap: wp(2), left: wp(24) },
+  scoreImg: { width: wp(20), height: hp(12), right: wp(4) },
   scoreText: {
     color: '#fff',
     fontSize: rf(18),
     fontWeight: 'bold',
-    right: 60,
-    top: 6,
+    right: wp(15),
+    top: hp(2),
   },
   headerRight: {
     flexDirection: 'row',
-    gap: 12,
+    gap: wp(2),
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: wp(2),
   },
-  topRightBtn: { width: 36, height: 38, right: 20 },
+  topRightBtnWrap: {
+  width: wp(4.7),
+  height: hp(14),
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+topRightBtn: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+},
   helpBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: wp(12),
+    height: hp(6),
+    borderRadius: hp(3),
     backgroundColor: '#1e3a5f',
     borderWidth: 2,
     borderColor: '#c9a961',
@@ -863,340 +923,466 @@ const s = StyleSheet.create({
 
   // Timer
   bottomLeft: {
-    position: 'absolute',
-    bottom: 10,
-    left: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  timeImg: { width: SW * 0.18, height: 44 },
-  timerText: {
-    color: '#fff',
-    fontSize: rf(20),
-    fontWeight: 'bold',
-    right: 100,
-    top: 6,
-  },
-  bottomRight: { position: 'absolute', bottom: 10, right: 12 },
-  submitImg: { width: SW * 0.22, height: 50, right: 40 },
+  position: 'absolute',
+  bottom: hp(0),
+  left: wp(0.4),
+},
 
-  resultOverlay: { ...StyleSheet.absoluteFill, justifyContent: 'flex-end' },
-  pauseIcon: {
-    position: 'absolute',
-    top: '45%',
-    alignSelf: 'center',
-    fontSize: 48,
-    color: 'rgba(255,255,255,0.8)',
-  },
-  correctResultBg: {
-    position: 'absolute',
-    top: SH * 0.12,
-    alignSelf: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  resultBanner: { width: SW * 0.48, height: 58, top: 8, right: 284 },
-  correctSubtext: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-    fontStyle: 'italic',
-  },
-  selectedOptionBox: {
-    position: 'absolute',
-    top: SH * 0.32,
-    left: SW * 0.04,
-    width: SW * 0.36,
-    height: SH * 0.14,
-  },
-  selectedOptionImg: {
-    width: '100%',
-    height: '100%', // 🔥 IMPORTANT
-  },
-  optionLabelBox: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'flex-start',
-    paddingTop: 8,
-    flex: 1,
-  },
-  optionLetter: {
-    color: '#c9a961',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  reasonPanel: {
-    position: 'absolute',
-    bottom: SH * 0.12,
-    width: SW * 0.4,
-    height: SH * 0.28,
-    left: SW * 0.02,
-    zIndex: 1,
-  },
-  explanationBox: {
-    position: 'absolute',
-    bottom: SH * 0.06,
-    width: SW * 0.38,
-    paddingHorizontal: 4,
-    paddingVertical: 4,
-  },
-  explanationText: {
-    position: 'absolute', // ✅ MUST
+timerWrap: {
+  width: wp(20),
+  height: hp(10),
+  justifyContent: 'center',
+  alignItems: 'center',
+},
 
-    width: SW * 0.34,
-    height: SH * 0.24,
+timeImg: {
+  ...StyleSheet.absoluteFill,
+  width: undefined,
+  height: undefined,
+},
 
-    bottom: SH * 0.12,
-    left: SW * 0.04,
+timerText: {
+  position: 'absolute',
 
-    textAlign: 'left',
-    textAlignVertical: 'top', // 🔥 FIX ALIGNMENT
+  width: '100%',
+  height: '100%',
 
-    color: '#fff',
-    fontSize: rf(16), // Responsive 18
-    lineHeight: rf(22),
+  color: '#fff',
+  fontSize: rf(18),
+  fontWeight: 'bold',
 
-    paddingHorizontal: 20,
-    paddingTop: -6, // ✅ ADD THIS
+  textAlign: 'center',
+  textAlignVertical: 'center',
 
-    zIndex: 5,
-  },
-  nextBtnContainer: {
-    position: 'absolute',
-    bottom: SH * 0.06,
-    right: SW * 0.05,
-  },
-  nextBtn: { width: SW * 0.28, height: 48 },
-  // Incorrect answer styles
-  incorrectResultBg2: {
-    position: 'absolute',
-    width: '10%',
-    height: 20,
-    top: 70,
-    left: -16,
-  },
-  yourAnswerBox: {
-    position: 'absolute',
-    top: SH * 0.32,
-    left: SW * 0.06,
-    width: SW * 0.42,
-    height: SH * 0.4,
-  },
-  yourAnswerLabel: { width: '76%', height: 52 },
-  incorrectcorrect: { width: '32%', height: 52, bottom: 100, left: 50 },
-  userAnswerImg: { width: '76%', height: 52 },
-  correctAnswerBox: {
-    position: 'absolute',
-    top: SH * 0.32, // 👈 same as selectedOptionBox
-    left: SW * 0.04,
-    width: SW * 0.35,
-    height: SH * 0.12,
-  },
-  correctAnswerLabel: {
-    width: '80%',
-    height: 56,
-    position: 'absolute',
-    top: -40,
-  },
-  correctAnswerImg: {
-    width: '100%',
-    height: '100%',
-  },
-  //  incorrectReasonPanel:{ position: 'absolute', bottom: SH * 0.32, width: SW * 0.35, height: SH * 0.12, left: SW * 0.32},
-  // incorrectDetail: { position: 'absolute', top: SH * 0.65, alignSelf: 'center', width: SW * 0.85, height: 50 },
+  includeFontPadding: false,
+  paddingVertical: hp(4),
+},
+  bottomRight: {
+  position: 'absolute',
+  bottom: hp(2),
+  right: wp(4),
 
-  // Cancel overlay
-  dimBg: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(0,0,0,0.4)' },
-  cancelBox: {
-    position: 'absolute',
-    top: 0,
-    left: -10,
-    right: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  cancelBg: {
-    width: SW * 0.4,
-    height: SH * 0.28,
-    position: 'absolute',
-    left: 16,
-    top: 120,
-  },
-  cancelHint: {
-    position: 'absolute',
-    top: SH * 0.61,
-    width: SW * 0.24,
-    height: SH * 0.14,
-    left: 30,
-  },
-  cancelSignal: {
-    position: 'absolute',
-    top: SH * 0.12,
-    left: SW * 0.31,
-    width: 66,
-    height: 80,
-  },
-  cancelTime: {
-    position: 'absolute',
-    top: SH * 0.55,
-    width: 130,
-    height: 100,
-    left: 36,
-  },
-  cancelContinueBtn: {
-    position: 'absolute',
-    bottom: SH * 0.05,
-    left: SW * 0.2,
-    zIndex: 10,
-    width: SW * 0.24,
-    height: 70,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelExitBtn: {
-    position: 'absolute',
-    bottom: SH * 0.05,
-    left: SW * 0.04,
-    zIndex: 10,
-    width: SW * 0.2,
-    height: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancel: { position: 'absolute', left: 32, width: 240, height: 60, top: 54 },
-  cancelActionImg: { width: '100%', height: '100%', resizeMode: 'contain' },
-  cancelTimerText: {
-    position: 'absolute',
-    top: SH * 0.35,
-    left: SW * 0.22,
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+  width: wp(22),
+  height: hp(14),
 
-  // Score screen
-  finalScore: { width: SW * 0.35, height: 100, top: 60, left: 50 },
-  scoreBadge: {
-    position: 'relative',
-    alignSelf: 'flex-start',
-    width: SW * 0.35,
-    height: SH * 0.24,
-    left: 50,
-    top: 60,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+submitImg: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+},
+resultOverlay: {
+  ...StyleSheet.absoluteFill,
+},
+
+pauseIcon: {
+  position: 'absolute',
+  top: '45%',
+  alignSelf: 'center',
+  fontSize: rf(40),
+  color: 'rgba(255,255,255,0.8)',
+},
+
+/* ───────── RESULT BANNER ───────── */
+
+correctResultBg: {
+  position: 'absolute',
+  top: hp(14),
+  alignSelf: 'flex-start',
+
+  width: wp(48),
+  height: hp(14),
+
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+  right: wp(60),
+},
+
+incorrectResultBg2: {
+  position: 'absolute',
+  top: hp(12),
+  alignSelf: 'flex-start',
+
+  width: wp(48),
+  height: hp(14),
+
+  justifyContent: 'flex-start',
+  alignItems: 'center',
+
+  right: wp(55),
+},
+
+resultBanner: {
+  width: '100%',
+  height: '100%',
+},
+
+/* ───────── SELECTED / CORRECT OPTION ───────── */
+
+selectedOptionBox: {
+  position: 'absolute',
+  top: hp(34),
+  left: wp(4.4),
+
+  width: wp(36),
+  height: hp(14),
+
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+correctAnswerBox: {
+  position: 'absolute',
+  top: hp(34),
+  left: wp(4.4),
+
+  width: wp(36),
+  height: hp(14),
+},
+
+selectedOptionImg: {
+  ...StyleSheet.absoluteFill,
+  width: undefined,
+  height: undefined,
+},
+
+correctAnswerImg: {
+  position: 'absolute',
+  width: '92%',
+  height: '100%',
+},
+
+/* ───────── OPTION TEXT ───────── */
+
+centerOptionText: {
+  position: 'absolute',
+
+  width: '68%',
+  height: '72%',
+
+  alignSelf: 'center',
+
+  top: '14%',
+
+  color: '#fff',
+  fontSize: rf(13),
+  fontWeight: '500',
+
+  textAlign: 'left',
+  textAlignVertical: 'center',
+
+  includeFontPadding: false,
+
+  lineHeight: rf(17),
+},
+
+/* ───────── REASON PANEL ───────── */
+
+reasonPanel: {
+  position: 'absolute',
+
+  top: hp(54),
+  left: wp(2),
+
+  width: wp(40),
+  height: hp(28),
+},
+
+/* ───────── EXPLANATION TEXT ───────── */
+
+explanationText: {
+  position: 'absolute',
+
+  top: hp(58),
+  left: wp(5),
+
+  width: wp(34),
+  height: hp(18),
+
+  color: '#fff',
+  fontSize: rf(14),
+
+  lineHeight: rf(16),
+
+  textAlign: 'left',
+},
+
+/* ───────── NEXT BUTTON ───────── */
+
+nextBtnContainer: {
+  position: 'absolute',
+
+  bottom: hp(5),
+  right: wp(4),
+
+  width: wp(28),
+  height: hp(12),
+
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+nextBtn: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+},
+  
+  dimBg: {
+  ...StyleSheet.absoluteFill,
+  backgroundColor: 'rgba(0,0,0,0.45)',
+},
+
+/* ───────── MAIN CONTAINER ───────── */
+
+cancelBox: {
+  position: 'absolute',
+
+  top: hp(18),
+  left: wp(4),
+
+  width: wp(42),
+  height: hp(62),
+},
+
+/* ───────── TITLE ───────── */
+
+cancel: {
+  position: 'absolute',
+
+  bottom: hp(50),
+  left: (14),
+
+  width: wp(26),
+  height: hp(16),
+},
+
+/* ───────── MAIN PANEL ───────── */
+
+cancelBg: {
+  position: 'absolute',
+
+  top: hp(14),
+  left: 0,
+
+  width: wp(40),
+  height: hp(28),
+},
+
+/* ───────── SIGNAL ICON ───────── */
+
+cancelSignal: {
+  position: 'absolute',
+
+  bottom: hp(48),
+  right: wp(4),
+
+  width: wp(8),
+  height: hp(16),
+},
+
+/* ───────── HINT PANEL ───────── */
+
+cancelHint: {
+  position: 'absolute',
+
+  top: hp(42),
+  left: wp(2),
+
+  width: wp(28),
+  height: hp(20),
+},
+
+/* ───────── TIMER PANEL (IF USED) ───────── */
+
+// cancelTime: {
+//   position: 'absolute',
+
+//   top: hp(40),
+//   right: wp(2),
+
+//   width: wp(20),
+//   height: hp(10),
+// },
+
+// cancelTimerText: {
+//   position: 'absolute',
+
+//   top: hp(42),
+//   right: wp(8),
+
+//   color: '#fff',
+//   fontSize: rf(30),
+//   fontWeight: 'bold',
+// },
+
+/* ───────── BUTTON ROW ───────── */
+
+cancelContinueBtn: {
+  position: 'absolute',
+
+  top: hp(67),
+  right: wp(24),
+
+  width: wp(20),
+  height: hp(10),
+
+  justifyContent: 'center',
+  alignItems: 'center',
+  
+},
+
+cancelExitBtn: {
+  position: 'absolute',
+
+  top: hp(64),
+  left: wp(22),
+
+  width: wp(22),
+  height: hp(12),
+
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+cancelActionImg: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+},
+
+  /* ───────── FINAL SCORE TITLE ───────── */
+
+finalScore: {
+  position: 'absolute',
+
+  top: hp(14),
+  right: wp(64),
+
+  width: wp(38),
+  height: hp(20),
+},
+
+/* ───────── SCORE NUMBER ───────── */
+
+scoreCountBox: {
+  position: 'absolute',
+
+  top: hp(20),
+  left: wp(2),
+
+  width: wp(12),
+  height: hp(12),
+
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+scoreCountText: {
+  color: '#fff',
+
+  fontSize: rf(32),
+  fontWeight: 'bold',
+
+  textAlign: 'center',
+
+  includeFontPadding: false,
+
+  textShadowColor: '#000',
+  textShadowOffset: {
+    width: 1,
+    height: 1,
   },
-  scoreCountBox: {
-    position: 'absolute',
-    top: 94,
-    alignSelf: 'flex-start',
-    left: 120,
-  },
-  scoreCountText: {
-    color: '#ffffff',
-    fontSize: rf(38),
-    fontWeight: 'bold',
-    textShadowColor: '#000',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 6,
-    right: 21,
-  },
-  finalScoreText: {
-    position: 'absolute',
-    bottom: SH * 0.08,
-    alignSelf: 'center',
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
+  textShadowRadius: 5,
+},
+
+/* ───────── BADGE ───────── */
+
+scoreBadge: {
+  position: 'absolute',
+
+  top: hp(36),
+  left: wp(4),
+
+  width: wp(34),
+  height: hp(22),
+},
+
+/* ───────── OPTIONAL TEXT ───────── */
+
+finalScoreText: {
+  position: 'absolute',
+
+  bottom: hp(10),
+  alignSelf: 'center',
+
+  color: '#fff',
+
+  fontSize: rf(28),
+  fontWeight: 'bold',
+},
 
   // Home screen
   homeOverlay: {
     height: '94%',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '54%',
     top: '16%',
-    left: '1%',
+    right: '10%',
   },
   welcomeOverlay: {
     height: '92%',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     width: '46%',
     top: '13%',
-    left: '-4%',
+    right: '1%',
   },
-  homeTitle: {
-    color: '#fff',
-    fontSize: 36,
-    fontWeight: 'bold',
-    letterSpacing: 2,
-    marginBottom: 16,
-  },
-  startBtn: {
-    backgroundColor: '#1a73e8',
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    borderRadius: 32,
-  },
-  startBtnText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  exitAppBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#ff4444',
-    paddingHorizontal: 48,
-    paddingVertical: 16,
-    borderRadius: 32,
-  },
-  exitAppBtnText: { color: '#ff4444', fontSize: 20, fontWeight: 'bold' },
+  
+retakeBtn: {
+  position: 'absolute',
 
-  centerOptionText: {
-    position: 'absolute',
+  top: hp(60),
+  left: wp(16),
 
-    width: '96%',
-    height: '96%', // 🔥 MATCH IMAGE
+  width: wp(22),
+  height: hp(14),
 
-    textAlign: 'left',
-    textAlignVertical: 'center',
-    left: 30,
-    color: '#fff',
-    fontSize: rf(15),
-    fontWeight: '500',
+  justifyContent: 'center',
+  alignItems: 'center',
 
-    paddingHorizontal: 20,
-  },
-  retakeBtn: {
-    width: SW * 0.26,
-    height: 70,
-    position: 'absolute',
-    bottom: SH * 0.05,
-    right: SW * 0.74,
-    zIndex: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  zIndex: 10,
+},
 
-  finishBtn: {
-    width: SW * 0.2,
-    height: 66,
-    position: 'absolute',
-    top: '80%',
-    bottom: SH * 0.05,
-    right: SW * 0.55,
-    zIndex: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+finishBtn: {
+  position: 'absolute',
 
-  retakeImg: {
-    width: SW * 0.28,
-    height: 70,
-  },
+  top: hp(64),
+  left: wp(0),
 
-  finishImg: {
-    width: SW * 0.22,
-    height: 60,
-  },
+  width: wp(22),
+  height: hp(12),
+
+  justifyContent: 'center',
+  alignItems: 'center',
+
+  zIndex: 10,
+},
+
+retakeImg: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+},
+
+finishImg: {
+  width: '100%',
+  height: '100%',
+  resizeMode: 'contain',
+},
 });
+ 

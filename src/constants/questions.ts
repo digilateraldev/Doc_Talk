@@ -69,7 +69,7 @@ export const QUESTIONS: QuestionData[] = [
       'Occasional burping after a heavy meal',
       'Mild fullness after eating too much',
       'Feeling hungry before lunch',
-      'Difficulty swallow or unexplained \nweight loss'
+      'Difficulty swallow or unexplained weight loss'
     ],
     correctExplanation: 'Difficulty swallowing can indicate a serious underlying problem. Unexplained weight loss should always be checked by a doctor.',
     incorrectExplanation: 'Not quite. Difficulty swallowing can be  a serious warning sign.Unexplained weight loss should not be ignored.'
@@ -79,7 +79,7 @@ export const QUESTIONS: QuestionData[] = [
     questionVideo: null,
     correctVideo: null,
     incorrectVideo: null,
-    questionText: 'If acidity or reflux keeps coming back,\nwhat is the right thing to do?',
+    questionText: 'If acidity or reflux keeps coming back,what is the right thing to do?',
     options: [
       'Speak to a doctor for proper advice',
       'Keep taking random medicines on your own',
