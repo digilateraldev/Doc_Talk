@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="17">
+      <module name="gradle-plugin-root.react-native-gradle-plugin" target="11" />
+      <module name="gradle-plugin-root.react-native-gradle-plugin.main" target="11" />
+      <module name="gradle-plugin-root.react-native-gradle-plugin.test" target="11" />
+      <module name="gradle-plugin-root.settings-plugin" target="11" />
+      <module name="gradle-plugin-root.settings-plugin.main" target="11" />
+      <module name="gradle-plugin-root.settings-plugin.test" target="11" />
+      <module name="gradle-plugin-root.shared" target="11" />
+      <module name="gradle-plugin-root.shared-testutil" target="11" />
+      <module name="gradle-plugin-root.shared-testutil.main" target="11" />
+      <module name="gradle-plugin-root.shared-testutil.test" target="11" />
+      <module name="gradle-plugin-root.shared.main" target="11" />
+      <module name="gradle-plugin-root.shared.test" target="11" />
+      <module name="quizflex.react-native-orientation-locker" target="21" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

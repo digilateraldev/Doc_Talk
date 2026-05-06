@@ -1,0 +1,66 @@
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+
+# React Native
+android/app/build/
+android/build/
+ios/build/
+
+# Gradle
+.gradle/
+local.properties
+
+# Android
+*.keystore
+*.jks
+
+# iOS
+Pods/
+*.xcworkspace
+
+# Metro
+.metro-health-check*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# VS Code
+.vscode/
+
+# Temporary files
+tmp/
+temp/
+
+# Cache
+.cache/
+
+# Bundle
+*.bundle
+
+# Generated APK/AAB
+*.apk
+*.aab
+
+# Firebase
+google-services.json
+GoogleService-Info.plist

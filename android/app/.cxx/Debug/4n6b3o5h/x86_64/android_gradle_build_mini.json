@@ -1,0 +1,43 @@
+{
+  "buildFiles": [
+    "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\node_modules\\react-native-safe-area-context\\android\\src\\main\\jni\\CMakeLists.txt",
+    "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\node_modules\\react-native\\ReactAndroid\\cmake-utils\\default-app-setup\\CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "C:\\Users\\digiLATERAL12\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+      "-C",
+      "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\android\\app\\.cxx\\Debug\\4n6b3o5h\\x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "C:\\Users\\digiLATERAL12\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe",
+    "-C",
+    "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\android\\app\\.cxx\\Debug\\4n6b3o5h\\x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "react_codegen_safeareacontext::@7984cd80db47aa7b952a": {
+      "artifactName": "react_codegen_safeareacontext",
+      "abi": "x86_64",
+      "output": "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\android\\app\\build\\intermediates\\cxx\\Debug\\4n6b3o5h\\obj\\x86_64\\libreact_codegen_safeareacontext.so",
+      "runtimeFiles": [
+        "C:\\Users\\digiLATERAL12\\.gradle\\caches\\8.13\\transforms\\7faeff1ccf085fdf369fa0176f2f16b4\\transformed\\fbjni-0.7.0\\prefab\\modules\\fbjni\\libs\\android.x86_64\\libfbjni.so",
+        "C:\\Users\\digiLATERAL12\\.gradle\\caches\\8.13\\transforms\\3159511bcf6f5fa83c579b63e5911a5a\\transformed\\react-android-0.85.2-debug\\prefab\\modules\\jsi\\libs\\android.x86_64\\libjsi.so",
+        "C:\\Users\\digiLATERAL12\\.gradle\\caches\\8.13\\transforms\\3159511bcf6f5fa83c579b63e5911a5a\\transformed\\react-android-0.85.2-debug\\prefab\\modules\\reactnative\\libs\\android.x86_64\\libreactnative.so"
+      ]
+    },
+    "appmodules::@6890427a1f51a3e7e1df": {
+      "artifactName": "appmodules",
+      "abi": "x86_64",
+      "output": "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\android\\app\\build\\intermediates\\cxx\\Debug\\4n6b3o5h\\obj\\x86_64\\libappmodules.so",
+      "runtimeFiles": [
+        "C:\\Users\\digiLATERAL12\\Harsh\\quizflex\\android\\app\\build\\intermediates\\cxx\\Debug\\4n6b3o5h\\obj\\x86_64\\libreact_codegen_safeareacontext.so",
+        "C:\\Users\\digiLATERAL12\\.gradle\\caches\\8.13\\transforms\\7faeff1ccf085fdf369fa0176f2f16b4\\transformed\\fbjni-0.7.0\\prefab\\modules\\fbjni\\libs\\android.x86_64\\libfbjni.so",
+        "C:\\Users\\digiLATERAL12\\.gradle\\caches\\8.13\\transforms\\3159511bcf6f5fa83c579b63e5911a5a\\transformed\\react-android-0.85.2-debug\\prefab\\modules\\jsi\\libs\\android.x86_64\\libjsi.so",
+        "C:\\Users\\digiLATERAL12\\.gradle\\caches\\8.13\\transforms\\3159511bcf6f5fa83c579b63e5911a5a\\transformed\\react-android-0.85.2-debug\\prefab\\modules\\reactnative\\libs\\android.x86_64\\libreactnative.so"
+      ]
+    }
+  }
+}

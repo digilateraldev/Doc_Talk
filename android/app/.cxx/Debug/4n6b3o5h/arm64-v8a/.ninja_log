@@ -1,0 +1,25 @@
+# ninja log v5
+648	36895	7996917547245759	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/89608884087292d752c2746d8594e334/source/codegen/jni/safeareacontext-generated.cpp.o	6e7d7401fa93fbc9
+5	157	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+444	47550	7996917653868631	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/85300f405c2f2e6bda98c8b1797024bc/renderer/components/safeareacontext/ShadowNodes.cpp.o	1e7523ef7fa31681
+523	35353	7996917531864564	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/40af611c180648f47f476cfd78443c8d/react/renderer/components/safeareacontext/States.cpp.o	590121cf5f0f69e7
+72	38394	7996917562306330	CMakeFiles/appmodules.dir/OnLoad.cpp.o	dc23da7249e867f8
+187	36190	7996917540157134	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/85300f405c2f2e6bda98c8b1797024bc/renderer/components/safeareacontext/EventEmitters.cpp.o	889121e696175f43
+299	49248	7996917670592825	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/1af22b73ba0ae03962e9e1aca15f4c1c/components/safeareacontext/ComponentDescriptors.cpp.o	309d4ef6824bce5a
+143	46948	7996917647843234	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/731332810eedfd7e4f65347f166f245c/components/safeareacontext/RNCSafeAreaViewState.cpp.o	56a15b1ec4ff555e
+387	48265	7996917660758264	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/8fb53ae15feea6b1d3e6ab2f4cb251ef/jni/react/renderer/components/safeareacontext/Props.cpp.o	7f5b34ddd37cd279
+93	50150	7996917679839578	CMakeFiles/appmodules.dir/C_/Users/digiLATERAL12/Harsh/quizflex/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	5edfa5ac402a6aa1
+233	50353	7996917681871126	safeareacontext_autolinked_build/CMakeFiles/react_codegen_safeareacontext.dir/14f216b738de5335288d0d6c883cab6a/safeareacontext/RNCSafeAreaViewShadowNode.cpp.o	515736589e049ef3
+50354	50851	7996917687022299	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/build/intermediates/cxx/Debug/4n6b3o5h/obj/arm64-v8a/libreact_codegen_safeareacontext.so	a3e3ac1837dfbbb2
+50852	51056	7996917689163693	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/build/intermediates/cxx/Debug/4n6b3o5h/obj/arm64-v8a/libappmodules.so	1f2bcfc503df0f44
+0	29	0	clean	49df977e0222b9f0
+115	5029	7997481450723078	build.ninja	637ca74858406ba4
+2	55	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+6	107	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+2	54	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+5	89	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+4	72	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+2	69	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+2	47	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+1	31	0	C:/Users/digiLATERAL12/Harsh/quizflex/android/app/.cxx/Debug/4n6b3o5h/arm64-v8a/CMakeFiles/cmake.verify_globs	7b4dda3d2984a84e
+1	12	0	clean	49df977e0222b9f0

@@ -1,0 +1,2 @@
+C:\Users\digiLATERAL12\Harsh\quizflex\node_modules\react-native-safe-area-context\android\src\main\jni\CMakeLists.txt
+C:\Users\digiLATERAL12\Harsh\quizflex\node_modules\react-native\ReactAndroid\cmake-utils\default-app-setup\CMakeLists.txt
